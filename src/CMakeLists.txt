@@ -1,5 +1,7 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+find_package(Sqlpp11)
+
 add_library(sqlpp11-connector-sqlite3
 		connection.cpp
 		bind_result.cpp
@@ -35,7 +37,7 @@ if (SQLPP_DYNAMIC_LOADING)
                                PUBLIC
                                ${SQLPP11_INCLUDE_DIR}
                                ${HinnantDate_INCLUDE_DIR}
-															 ${SQLITE3_INCLUDE_DIRS}
+                                ${SQLITE3_INCLUDE_DIRS}
                                $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                                $<INSTALL_INTERFACE:include>)
 endif()
@@ -43,16 +45,14 @@ endif()
 # TODO export Targets for HinnantDate and Sqlite3 as well
 target_include_directories(sqlpp11-connector-sqlite3
                            PUBLIC
-                           ${SQLPP11_INCLUDE_DIR}
-                           ${HinnantDate_INCLUDE_DIR}
-													 ${SQLITE3_INCLUDE_DIRS}
-                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                           $<INSTALL_INTERFACE:include>)
+                           ${SQLITE3_INCLUDE_DIRS}
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+                           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 if (BUILD_SHARED_LIBS)
-    target_compile_definitions(sqlpp11-connector-sqlite3 PUBLIC SQLPP11_SHARED)
+    target_compile_definitions(sqlpp11-connector-sqlite3 PUBLIC sqlpp11)
     if (SQLPP_DYNAMIC_LOADING)
-        target_compile_definitions(sqlpp11-connector-sqlite3-dynamic PUBLIC SQLPP11_SHARED)
+        target_compile_definitions(sqlpp11-connector-sqlite3-dynamic PUBLIC sqlpp11)
     endif()
 endif()
 
@@ -67,14 +67,25 @@ else()
     target_link_libraries(sqlpp11-connector-sqlite3 ${SQLITE3_LIBRARIES})
 endif()
 
-install(TARGETS sqlpp11-connector-sqlite3
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin)
 
+include(GNUInstallDirs)
+
+install(TARGETS sqlpp11-connector-sqlite3
+        EXPORT Sqlpp11ConnectorSqlite3
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT Sqlpp11ConnectorSqlite3
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Sqlpp11ConnectorSqlite3
+        NAMESPACE sqlpp11::
+        FILE Sqlpp11ConnectorSqlite3Config.cmake)
+    
 if (SQLPP_DYNAMIC_LOADING)
     install(TARGETS sqlpp11-connector-sqlite3-dynamic
-            ARCHIVE DESTINATION lib
-            LIBRARY DESTINATION lib
-            RUNTIME DESTINATION bin)
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
